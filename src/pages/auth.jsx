@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PiLoginButton from "../components/PiLoginButton";
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -32,6 +33,14 @@ function Auth() {
             {isLogin ? "Login" : "Sign Up"}
           </button>
         </form>
+
+        <div className="flex items-center gap-3 my-6" aria-hidden="true">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-500 uppercase">or</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        <PiLoginButton />
 
         <p className="text-center text-sm mt-6">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
