@@ -7,18 +7,20 @@ function onIncompletePaymentFound(payment) {
 
 export const PI_TOKEN_STORAGE_KEY = "pi_accessToken";
 
-export function sendTokenToParent(accessToken) {
-  if (!accessToken || window.parent === window) return;
+export function sendTokenToParent(accessToken, user) {
+  if (!accessToken) return;
   window.parent.postMessage(
     {
-      type: "PI_ACCESS_TOKEN",
+      type: "PI_AUTH_SUCCESS",
       accessToken,
       token: accessToken,
-      piAccessToken: accessToken,
+      uid: user?.uid,
+      username: user?.username,
     },
     "*",
   );
   window.parent.postMessage(accessToken, "*");
+  window.parent.postMessage({ piAccessToken: accessToken, accessToken }, "*");
 }
 
 function PiLoginButton({ onLogin }) {
@@ -28,11 +30,15 @@ function PiLoginButton({ onLogin }) {
   const [user, setUser] = useState(null);
 
   async function handleClick() {
+    if (!window.Pi) {
+      alert("Open in Pi Browser");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const Pi = await initPiSdk();
-      const result = await Pi.authenticate(["username"], onIncompletePaymentFound);
+      const result = await Pi.authenticate(["username", "payments"], onIncompletePaymentFound);
       console.log("Pi.authenticate result:", result);
       const accessToken = result.accessToken;
 
@@ -41,11 +47,13 @@ function PiLoginButton({ onLogin }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accessToken, user: result.user }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Verification failed");
+      const data = await response.json().catch(() => ({}));
 
       localStorage.setItem(PI_TOKEN_STORAGE_KEY, accessToken);
-      sendTokenToParent(accessToken);
+      sendTokenToParent(accessToken, result.user);
+      console.log("Pi login success, token sent to App Studio parent", accessToken);
+
+      if (!response.ok) throw new Error(data.error || "Verification failed");
 
       setUser(data.user);
       onLogin?.(data.user);

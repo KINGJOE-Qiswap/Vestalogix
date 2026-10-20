@@ -25,7 +25,7 @@ export function initPiSdk() {
       .then((Pi) => {
         Pi.init({
           version: "2.0",
-          sandbox: import.meta.env.VITE_PI_SANDBOX === "true",
+          sandbox: false,
         });
         return Pi;
       })
