@@ -1,8 +1,12 @@
-import { useState } from "react";
-import PiLoginButton from "../components/PiLoginButton";
+import { useEffect, useState } from "react";
+import PiLoginButton, { PI_TOKEN_STORAGE_KEY, sendTokenToParent } from "../components/PiLoginButton";
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    sendTokenToParent(localStorage.getItem(PI_TOKEN_STORAGE_KEY));
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">

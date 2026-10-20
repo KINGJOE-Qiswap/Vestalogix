@@ -5,6 +5,22 @@ function onIncompletePaymentFound(payment) {
   console.log("Incomplete Pi payment found:", payment);
 }
 
+export const PI_TOKEN_STORAGE_KEY = "pi_accessToken";
+
+export function sendTokenToParent(accessToken) {
+  if (!accessToken || window.parent === window) return;
+  window.parent.postMessage(
+    {
+      type: "PI_ACCESS_TOKEN",
+      accessToken,
+      token: accessToken,
+      piAccessToken: accessToken,
+    },
+    "*",
+  );
+  window.parent.postMessage(accessToken, "*");
+}
+
 function PiLoginButton({ onLogin }) {
   const { ready, status, error: sdkError } = usePiSdk();
   const [loading, setLoading] = useState(false);
@@ -18,14 +34,18 @@ function PiLoginButton({ onLogin }) {
       const Pi = await initPiSdk();
       const result = await Pi.authenticate(["username"], onIncompletePaymentFound);
       console.log("Pi.authenticate result:", result);
+      const accessToken = result.accessToken;
 
       const response = await fetch("/api/pi/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken: result.accessToken, user: result.user }),
+        body: JSON.stringify({ accessToken, user: result.user }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Verification failed");
+
+      localStorage.setItem(PI_TOKEN_STORAGE_KEY, accessToken);
+      sendTokenToParent(accessToken);
 
       setUser(data.user);
       onLogin?.(data.user);
